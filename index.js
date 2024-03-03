@@ -1,46 +1,74 @@
-// Import required modules
-import express from 'express';
-import bodyParser from 'body-parser';
-import compression from 'compression';
-import OpenAI from 'openai';
+const express = require('express');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cors = require('cors');
+const compression = require('compression');
+const morgan = require('morgan');
+const axios = require('axios');
 
-// Create an Express app
 const app = express();
 const port = 3000;
 
-// Middleware setup
-app.use(bodyParser.json());
-app.use(compression());
-app.disable('x-powered-by');
+// Replace 'YOUR_GENERATIVE_API_KEY' with your actual Google Generative AI key
+const generativeApiKey = 'AIzaSyDV3o1suBgH6S23E3sKqnkPXDcxdy1fR7A';
+const genAI = new GoogleGenerativeAI(generativeApiKey);
 
-// OpenAI setup
-const openai = new OpenAI({ apiKey: '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' });
+// Replace 'YOUR_SERPER_API_KEY' with your actual Serper API key
+const serperApiKey = 'ae2a2bbf5de3b6c1bd2f9832f289d911b4a6d261';
 
-// Endpoint for generating responses
-app.post('/generate', async (req, res) => {
+// Middleware to log incoming requests
+app.use(morgan('dev'));
+
+app.use(cors()); // Enable CORS
+app.use(compression()); // Enable Compression
+app.use(express.json());
+
+// Middleware to log outgoing responses
+app.use((req, res, next) => {
+  const originalSend = res.send;
+
+  res.send = function (body) {
+    console.log(`Outgoing Response for ${req.method} ${req.url}:`, body);
+    originalSend.apply(res, arguments);
+  };
+
+  next();
+});
+
+app.post('/generate-text', async (req, res) => {
   try {
-    const prompt = req.body.prompt;
+    const { prompt } = req.body;
 
-    // Perform GPT-3 completion
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { "role": "system", "content": "You are a helpful assistant." },
-        { "role": "user", "content": prompt },
-      ],
-      model: "gpt-4-turbo-preview",
+    // Make a request to the Serper API
+    const serperApiUrl = 'https://google.serper.dev/news';
+    const serperData = { q: prompt, num: 20 }; // You can adjust the parameters as needed
+
+    const serperResponse = await axios.post(serperApiUrl, serperData, {
+      headers: { 'X-API-KEY': serperApiKey, 'Content-Type': 'application/json' },
     });
 
-    const assistantResponse = completion.choices[0].message.content;
+    const serperResults = serperResponse.data;
 
-    // Send the response back to the client
-    res.status(200).json({ message: assistantResponse });
+    // Ensure that the Serper API response is a JSON object
+    if (typeof serperResults === 'object') {
+      // For text-only input, use the gemini-pro model
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+
+      // Append the necessary string for the Google Generative model
+      const promptForGenerativeModel = JSON.stringify({ ...serperResults, prompt: `Based on the JSON Data provided above is it true or false` });
+
+      const result = await model.generateContent(promptForGenerativeModel);
+      const response = await result.response;
+      const generatedText = response.text();
+
+      res.json({ generatedText });
+    } else {
+      res.status(500).json({ error: 'Serper API did not return a valid JSON object.' });
+    }
   } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Start the Express server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
