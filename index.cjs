@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cors = require('cors');
 const compression = require('compression');
@@ -8,11 +8,8 @@ const axios = require('axios');
 const app = express();
 const port = 3000;
 
-// Replace 'YOUR_GENERATIVE_API_KEY' with your actual Google Generative AI key
 const generativeApiKey = 'AIzaSyDV3o1suBgH6S23E3sKqnkPXDcxdy1fR7A';
 const genAI = new GoogleGenerativeAI(generativeApiKey);
-
-// Replace 'YOUR_SERPER_API_KEY' with your actual Serper API key
 const serperApiKey = 'ae2a2bbf5de3b6c1bd2f9832f289d911b4a6d261';
 
 // Middleware to log incoming requests
@@ -33,6 +30,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+
 
 app.post('/generate-text', async (req, res) => {
   try {
@@ -60,6 +59,7 @@ app.post('/generate-text', async (req, res) => {
       const response = await result.response;
       const generatedText = response.text();
 
+
       res.json({ generatedText });
     } else {
       res.status(500).json({ error: 'Serper API did not return a valid JSON object.' });
@@ -70,5 +70,6 @@ app.post('/generate-text', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is now running on http://localhost:${port}`);
+
 });

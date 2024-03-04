@@ -1,14 +1,14 @@
 {
   "name": "fake_news_backend",
   "version": "1.0.0",
-  "description": "Backend for Flutter Football News Fact Checher App",
-  "main": "index.js",
+  "description": "Backend for Flutter Football News Fact Checker App",
+  "main": "index.cjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "keywords": [
     "backend"
   ],
@@ -16,7 +16,9 @@
     "@google/generative-ai": "^0.2.1",
     "axios": "^1.6.7",
     "compression": "^1.7.4",
-    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "morgan": "^1.10.0",
     "openai": "^4.28.0"
   },
   "devDependencies": {
